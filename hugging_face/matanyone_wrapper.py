@@ -21,7 +21,7 @@ def gen_erosion(alpha, min_kernel_size, max_kernel_size):
 
 @torch.inference_mode()
 @torch.cuda.amp.autocast()
-def matanyone(processor, frames_np, mask, r_erode=0, r_dilate=0, n_warmup=10):
+def matanyone(processor, frames_np, mask, r_erode=0, r_dilate=0, n_warmup=10, device="cuda"):
     """
     Args:
         frames_np: [(H,W,C)]*n, uint8
@@ -41,14 +41,14 @@ def matanyone(processor, frames_np, mask, r_erode=0, r_dilate=0, n_warmup=10):
     if r_erode > 0:
         mask = gen_erosion(mask, r_erode, r_erode)
 
-    mask = torch.from_numpy(mask).cuda()
+    mask = torch.from_numpy(mask).to(device)
 
     frames_np = [frames_np[0]]* n_warmup + frames_np
 
     frames = []
     phas = []
     for ti, frame_single in tqdm.tqdm(enumerate(frames_np)):
-        image = to_tensor(frame_single).cuda().float()
+        image = to_tensor(frame_single).to(device).float()
 
         if ti == 0:
             output_prob = processor.step(image, mask, objects=objects)      # encode given mask
